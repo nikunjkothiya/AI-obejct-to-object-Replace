@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object to Object Replace</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+        }
+        #imageForm {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .image-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .image-container img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        #responseImg img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        #response {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Object to Object Replace</h1>
+    <form id="imageForm" enctype="multipart/form-data">
+        <label for="inputImage">Select Input Image:</label>
+        <input type="file" id="inputImage" name="inputImage" accept="image/*" onchange="showImagePreview('inputImage', 'inputPreview')">
+        <label for="appendImage">Select Append Image:</label>
+        <input type="file" id="appendImage" name="appendImage" accept="image/*" onchange="showImagePreview('appendImage', 'appendPreview')">
+        <label for="objectName">Object Name:</label>
+        <input type="text" id="objectName" name="objectName">
+        <button type="button" onclick="submitImages()">Submit</button>
+    </form>
+    <div class="image-container">
+        <div id="inputPreview"></div>
+        <div id="appendPreview"></div>
+    </div>
+    <div id="response"></div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+       function submitImages() {
+            let inputImage = document.getElementById('inputImage').files[0];
+            let appendImage = document.getElementById('appendImage').files[0];
+            let objectName = document.getElementById('objectName').value;
+
+            // Check if both input and append images are selected
+            if (inputImage && appendImage) {
+                var formData = new FormData();
+                formData.append('input_image', inputImage);
+                formData.append('append_image', appendImage);
+
+                // Append objectName if user added any value
+                if (objectName) {
+                    formData.append('objectName', objectName);
+                }
+
+                fetch('/process_images', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to process images');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.output_base64) {
+                        document.getElementById('response').innerHTML = "<h2>Final Image:</h2><div id='responseImg'><img src='data:image/png;base64," + data.output_base64 + "'/></div>";
+                    } else if (data.message) {
+                        alert(data.message);
+                    } else {
+                        alert('Unknown error occurred');
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error.message);
+                });
+            } else {
+                alert("Please select both input and append images.");
+            }
+        }
+
+        function showImagePreview(inputId, previewId) {
+            var input = document.getElementById(inputId);
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#' + previewId).html('<img src="' + e.target.result + '" alt="Image Preview">');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+</body>
+</html>
